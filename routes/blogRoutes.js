@@ -15,7 +15,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: 'blog_images', // Cloudinary folder for storing blog images
+    folder: 'blog_images',
     allowed_formats: ['jpg', 'png', 'jpeg'],
   },
 });
@@ -26,13 +26,17 @@ const upload = multer({ storage });
 module.exports = function (db) {
   const router = express.Router();
 
-  // Create a new blog post
+  // In your Node.js API route (using JavaScript):
   router.post('/', upload.single('blogImg'), async (req, res) => {
     try {
       const { title, content, userMail } = req.body;
-      const blogImg = req.file ? req.file.path : null; // Get Cloudinary URL
+      const defaultImage = "https://res.cloudinary.com/dbmiyxijh/image/upload/v1740252740/blog_images/t1fvjfhajumfcxqypzql.png";
 
-      const blogPost = { title, content, userMail, blogImg };
+      // Use the uploaded image or fallback to the default image
+      const blogImg = req.file ? req.file.path : defaultImage;
+      const createdAt = new Date();
+
+      const blogPost = { title, content, userMail, blogImg, createdAt };
       const result = await db.collection('blogs').insertOne(blogPost);
 
       res.status(201).json({ _id: result.insertedId, ...blogPost });
@@ -41,15 +45,26 @@ module.exports = function (db) {
     }
   });
 
-  // Get all blog posts
+
+
   router.get('/', async (req, res) => {
     try {
       const blogs = await db.collection('blogs').find().sort({ _id: -1 }).toArray();
-      res.json(blogs);
+
+      // Fetch author names for all blogs
+      const blogsWithAuthors = await Promise.all(
+        blogs.map(async (blog) => {
+          const user = await db.collection('users').findOne({ userMail: blog.userMail });
+          return { ...blog, authorName: user ? user.authorName : 'Unknown Author' };
+        })
+      );
+
+      res.status(200).json(blogsWithAuthors);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
+
 
   // Get a single blog by ID
   router.get('/:id', async (req, res) => {
@@ -68,6 +83,7 @@ module.exports = function (db) {
 
   router.get('/blogsByUser/:userMail', async (req, res) => {
     try {
+      9
       const { userMail } = req.params;
       const blogs = await db.collection('blogs').find({ userMail }).toArray();
       res.json(blogs);

@@ -8,22 +8,22 @@ module.exports = function(db) {
     // Middleware to parse JSON request bodies
     router.use(express.json());
 
-    // 1. Add a comment to a blog post
+    //  Add a comment to a blog post
     router.post('/posts/:postId/comments', async (req, res) => {
         try {
-            const postId = req.params.postId; // Extract the post ID from the URL
-            const { text, author } = req.body; // Extract comment data from the request body
+            const postId = req.params.postId; 
+            const { text, author } = req.body;
 
             if (!text || !author) {
                 return res.status(400).json({ error: "Text and author are required." });
             }
 
             const newComment = {
-                postId: new ObjectId(postId), // Associate the comment with the post
+                postId: new ObjectId(postId), 
                 text: text,
                 author: author,
                 createdAt: new Date(),
-                replies: [] // Initialize an empty array for replies
+                replies: []
             };
 
             const result = await db.collection('comments').insertOne(newComment);
@@ -39,8 +39,8 @@ module.exports = function(db) {
         }
     });
 
-    // 2. Add a reply to an existing comment
-    router.post('/comments/:commentId/replies', async (req, res) => {
+    // Add a reply to an existing comment
+    router.post('/commentReply/:commentId/replies', async (req, res) => {
         try {
             const commentId = req.params.commentId;
             const { text, author } = req.body;
@@ -71,7 +71,7 @@ module.exports = function(db) {
         }
     });
 
-    // 3. Get all comments for a specific post
+    // Get all comments for a specific post
     router.get('/posts/:postId/comments', async (req, res) => {
         try {
             const postId = req.params.postId;

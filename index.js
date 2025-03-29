@@ -15,6 +15,7 @@ const MONGO_URI = process.env.MONGO_URI;
 const blogRoutes = require('./routes/blogRoutes');
 const userRoutes = require('./routes/userRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const studyMaterialsRoutes = require('./routes/studyMaterials');
 
 MongoClient.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then((client) => {
@@ -25,6 +26,7 @@ MongoClient.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true
     app.use('/api/blogs', blogRoutes(db));
     app.use('/api/users', userRoutes(db));
     app.use('/api/comments', commentRoutes(db));
+    app.use('/api/study-materials', studyMaterialsRoutes(db));
 
     // Start server
     app.listen(PORT, () => {
