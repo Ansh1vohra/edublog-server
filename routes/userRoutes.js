@@ -161,11 +161,11 @@ module.exports = function (db) {
   router.put('/updateAuthorImage', upload.single('imgUrl'), async (req, res) => {
     try {
       const { userMail } = req.body;
-      const imageUrl = req.file.path; 
+      const imgUrl = req.file.path; 
 
       const updatedUser = await db.collection('users').findOneAndUpdate(
         { userMail },
-        { $set: { imgUrl: imageUrl } },
+        { $set: { imgUrl: imgUrl } },
       );
 
       if (!updatedUser) {
