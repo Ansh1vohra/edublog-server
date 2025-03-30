@@ -79,7 +79,9 @@ module.exports = function (db) {
         return res.status(400).json({ error: "User already exists" });
       }
 
-      const user = { userMail, authorName };
+      const imageUrl = "https://res.cloudinary.com/dbmiyxijh/image/upload/v1743317385/blog_images/utowgdzijmmjoagh9z0q.png";
+
+      const user = { userMail, authorName, imageUrl };
       const result = await db.collection('users').insertOne(user);
       res.status(201).json({ _id: result.insertedId, ...user });
     } catch (error) {
@@ -138,7 +140,7 @@ module.exports = function (db) {
   router.put('/updateAuthorImage', upload.single('authorImg'), async (req, res) => {
     try {
       const { userMail } = req.body;
-      const imageUrl = req.file.path; // Cloudinary returns the image URL
+      const imageUrl = req.file.path; 
 
       const updatedUser = await db.collection('users').findOneAndUpdate(
         { userMail },
