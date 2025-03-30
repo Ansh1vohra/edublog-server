@@ -134,30 +134,28 @@ module.exports = function (db) {
         return res.status(400).json({ error: "Missing required fields" });
       }
   
+      // Check if the new author name already exists
+      const existingAuthor = await db.collection('users').findOne({ authorName });
+      if (existingAuthor && existingAuthor.userMail !== userMail) {
+        return res.status(400).json({ error: "Author name already exists. Please choose another name." });
+      }
+  
       const updatedUser = await db.collection('users').findOneAndUpdate(
         { userMail },
-        { $set: { authorName } },
-        { 
-          returnDocument: 'after', // Return the updated document
-          projection: { _id: 1, userMail: 1, authorName: 1, imageUrl: 1 } // Explicitly return fields
-        }
+        { $set: { authorName } }
       );
   
-      if (!updatedUser.value) {
-        // Check if the user exists before attempting to update
-        const userExists = await db.collection('users').findOne({ userMail });
-        if (!userExists) {
-          return res.status(404).json({ error: "User not found" });
-        }
+      if (!updatedUser) {
         return res.status(500).json({ error: "Update failed unexpectedly" });
       }
   
-      res.json(updatedUser.value);
+      res.json({ message: "Author name updated successfully" });
     } catch (error) {
       console.error("Update error:", error); // Detailed logging
       res.status(500).json({ error: error.message });
     }
   });
+  
   
 
   router.put('/updateAuthorImage', upload.single('imgUrl'), async (req, res) => {
@@ -168,14 +166,13 @@ module.exports = function (db) {
       const updatedUser = await db.collection('users').findOneAndUpdate(
         { userMail },
         { $set: { imgUrl: imageUrl } },
-        { returnDocument: 'after' }
       );
 
-      if (!updatedUser.value) {
+      if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
       }
 
-      res.json({ success: true, data: updatedUser.value, message: "Profile photo updated successfully" });
+      res.json({ success: true,  message: "Profile photo updated successfully" });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
