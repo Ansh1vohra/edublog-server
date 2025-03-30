@@ -128,61 +128,61 @@ module.exports = function (db) {
   router.put('/updateAuthorName', async (req, res) => {
     try {
       const { userMail, authorName } = req.body;
-  
-      // Add explicit validation for input
+
       if (!userMail || !authorName) {
         return res.status(400).json({ error: "Missing required fields" });
       }
-  
+
       // Check if the new author name already exists
       const existingAuthor = await db.collection('users').findOne({ authorName });
       if (existingAuthor && existingAuthor.userMail !== userMail) {
+        // return res.json({ message: "Author name already exists. Please choose another name." });
         return res.status(400).json({ error: "Author name already exists. Please choose another name." });
       }
-  
+
       const updatedUser = await db.collection('users').findOneAndUpdate(
         { userMail },
         { $set: { authorName } }
       );
-  
+
       if (!updatedUser) {
         return res.status(500).json({ error: "Update failed unexpectedly" });
       }
-  
+
       res.json({ message: "Author name updated successfully" });
     } catch (error) {
       console.error("Update error:", error); // Detailed logging
       res.status(500).json({ error: error.message });
     }
   });
-  
+
   router.put('/updateAuthorImage', upload.single('imgUrl'), async (req, res) => {
     try {
       const { userMail } = req.body;
       if (!userMail || !req.file) {
         return res.status(400).json({ error: "Missing userMail or image file" });
       }
-  
+
       const imgUrl = req.file.path; // Cloudinary file path (may need `req.file.url`)
-  
+
       const updatedUser = await db.collection('users').findOneAndUpdate(
         { userMail },
         { $set: { imgUrl: imgUrl } }, // Ensure your DB field matches this
       );
-  
+
       if (!updatedUser) {
         return res.status(404).json({ error: "Error Uploading Image" });
       }
-  
+
       res.json({ success: true, message: "Profile photo updated successfully", imageUrl: imgUrl });
-  
+
     } catch (error) {
       console.error("Error updating profile image:", error);
       res.status(500).json({ error: error.message });
     }
   });
-  
-  
+
+
   return router;
 };
 
