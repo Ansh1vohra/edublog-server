@@ -2,8 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
-
-
+const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
@@ -29,6 +28,8 @@ const oAuth2Client = new google.auth.OAuth2(
   process.env.CLIENT_SECRET,
   process.env.REDIRECT_URI
 );
+
+
 
 
 oAuth2Client.setCredentials({
@@ -105,8 +106,14 @@ module.exports = function (db) {
     }
   });
 
+  const otpLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Limit each IP to 5 requests per windowMs
+    message: 'Too many OTP requests from this IP, please try again later'
+  });
+
   // Route to send OTP to email
-  router.post('/sendOTP', async (req, res) => {
+  router.post('/sendOTP', otpLimiter, async (req, res) => {
     const { email, OTP } = req.body;
     try {
       // Send OTP via email
@@ -121,21 +128,37 @@ module.exports = function (db) {
   router.put('/updateAuthorName', async (req, res) => {
     try {
       const { userMail, authorName } = req.body;
+  
+      // Add explicit validation for input
+      if (!userMail || !authorName) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+  
       const updatedUser = await db.collection('users').findOneAndUpdate(
         { userMail },
         { $set: { authorName } },
-        { returnDocument: 'after' }
+        { 
+          returnDocument: 'after', // Return the updated document
+          projection: { _id: 1, userMail: 1, authorName: 1, imageUrl: 1 } // Explicitly return fields
+        }
       );
-
+  
       if (!updatedUser.value) {
-        return res.status(404).json({ error: "User not found" });
+        // Check if the user exists before attempting to update
+        const userExists = await db.collection('users').findOne({ userMail });
+        if (!userExists) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        return res.status(500).json({ error: "Update failed unexpectedly" });
       }
-
+  
       res.json(updatedUser.value);
     } catch (error) {
+      console.error("Update error:", error); // Detailed logging
       res.status(500).json({ error: error.message });
     }
   });
+  
 
   router.put('/updateAuthorImage', upload.single('imgUrl'), async (req, res) => {
     try {
