@@ -156,27 +156,33 @@ module.exports = function (db) {
     }
   });
   
-  
-
   router.put('/updateAuthorImage', upload.single('imgUrl'), async (req, res) => {
     try {
       const { userMail } = req.body;
-      const imgUrl = req.file.path; 
-
+      if (!userMail || !req.file) {
+        return res.status(400).json({ error: "Missing userMail or image file" });
+      }
+  
+      const imgUrl = req.file.path; // Cloudinary file path (may need `req.file.url`)
+  
       const updatedUser = await db.collection('users').findOneAndUpdate(
         { userMail },
-        { $set: { imgUrl: imgUrl } },
+        { $set: { imageUrl: imgUrl } }, // Ensure your DB field matches this
+        { returnDocument: 'after' } // Ensures updated document is returned
       );
-
-      if (!updatedUser) {
+  
+      if (!updatedUser.value) {
         return res.status(404).json({ error: "User not found" });
       }
-
-      res.json({ success: true,  message: "Profile photo updated successfully" });
+  
+      res.json({ success: true, message: "Profile photo updated successfully", imageUrl: imgUrl });
+  
     } catch (error) {
+      console.error("Error updating profile image:", error);
       res.status(500).json({ error: error.message });
     }
   });
+  
   
   return router;
 };
