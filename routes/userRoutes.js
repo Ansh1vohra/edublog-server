@@ -167,12 +167,11 @@ module.exports = function (db) {
   
       const updatedUser = await db.collection('users').findOneAndUpdate(
         { userMail },
-        { $set: { imageUrl: imgUrl } }, // Ensure your DB field matches this
-        { returnDocument: 'after' } // Ensures updated document is returned
+        { $set: { imgUrl: imgUrl } }, // Ensure your DB field matches this
       );
   
-      if (!updatedUser.value) {
-        return res.status(404).json({ error: "User not found" });
+      if (!updatedUser) {
+        return res.status(404).json({ error: "Error Uploading Image" });
       }
   
       res.json({ success: true, message: "Profile photo updated successfully", imageUrl: imgUrl });
